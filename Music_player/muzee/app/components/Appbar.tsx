@@ -6,7 +6,7 @@ export default function Appbar() {
     const session = useSession();
     return (
         <div className="sticky top-0 z-50">
-        <div className="flex justify-between items-center px-4 py-2 text-white bg-gradient-to-l from-blue-500 to-purple-500 h-20 posion-fixed top-0 left-0 right-0 z-50">
+        <div className="flex justify-between items-center px-4 py-2 text-white  h-20 posion-fixed top-10 left-0 right-0 z-50">
             <h1 className="text-xl font-bold ">
                 Play Music
             </h1>

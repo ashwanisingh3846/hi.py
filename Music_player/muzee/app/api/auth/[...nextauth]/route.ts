@@ -9,7 +9,6 @@ export const authOptions = {
         clientId: process.env.GOOGLE_ID ?? "",
         clientSecret: process.env.GOOGLE_SECRETE ?? "",
         }),
-        
     ],
     callbacks :{
         async signIn(params: any): Promise<boolean> {
