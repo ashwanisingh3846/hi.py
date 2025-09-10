@@ -1,30 +1,45 @@
-require("dotenv").config();
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { prismaClient } from "../../../lib/db";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { prismaClient } from "@/app/lib/db";
+import { NextAuthOptions } from "next-auth";
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
         clientId: process.env.GOOGLE_ID ?? "",
-        clientSecret: process.env.GOOGLE_SECRETE ?? "",
+        clientSecret: process.env.GOOGLE_SECRETE ?? "", // ✅ also fixed typo
         }),
     ],
-    callbacks :{
-        async signIn(params: any): Promise<boolean> {
-            try{
-                await prismaClient.user.create({
-                data : {
-                    email : params.user.email,
-                    provider : "google"
-                }
-            })
-            }catch(error){
-                console.log(error);
+    adapter: PrismaAdapter(prismaClient),
+    secret: process.env.NEXTAUTH_SECRET ?? "some-secret",
+    session: {
+        strategy: "jwt",
+    },
+
+    callbacks: {
+        async jwt({ token, user, account }) {
+        if (user?.email) {
+            const dbUser = await prismaClient.user.findUnique({
+            where: { email: user.email },
+            });
+
+            console.log("DB user:", JSON.stringify(dbUser));
+
+            if (dbUser) {
+            token.id = dbUser.id;
+            console.log("✅ token.id set to:", token.id);
             }
-            return true
         }
-    }
-}
+        return token;
+        },
+        async session({ session, token }) {
+        if (session.user && token?.id) {
+            session.user.id = token.id as string;
+        }
+        return session;
+        },
+    },
+};
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

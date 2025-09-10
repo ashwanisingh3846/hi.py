@@ -7,34 +7,91 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id])
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? 
+  access_token      String? 
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  expires      DateTime
+}
+
 model User {
-  id             String       @id @default(uuid())
-  email          String       @unique
-  provider       Provider
-  streams        Stream[]
-  Upvotes        Upvote[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  streams       Stream[]
+  upvotes       Upvote[]
+  downvotes     Downvote[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime? @updatedAt
 }
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 model Stream {
-  id             String       @id @default(uuid())
-  type           StreamType
-  active         Boolean      @default(true)
-  title          String       @default("")
-  BigThumbnail   String       @default("")
-  SmallThumbnail String       @default("")
-  url            String      
-  extractedId    String?
-  userId         String
-  user           User         @relation(fields: [userId], references: [id])
-  Upvotes   Upvote[]
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id] ,onDelete: Cascade)
+  title           String
+  url             String
+  extractedId     String
+  bigThumbnail    String      
+  smallThumbnail  String     
+  type          StreamType?
+  active          Boolean      @default(true)
+  upvotes         Upvote[]
+  downvotes       Downvote[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime?    @updatedAt  
 }
-model Upvote{
-  id             String       @id @default(uuid())
-  userId         String
-  user           User         @relation(fields: [userId], references: [id])
-  streamId       String
-  stream         Stream       @relation(fields: [streamId], references: [id])
-  @@unique([userId, streamId])
+
+
+model Upvote {
+  userId   String
+  streamId String
+  user     User     @relation(fields: [userId], references: [id],onDelete: Cascade)
+  stream   Stream   @relation(fields: [streamId], references: [id],onDelete: Cascade)
+
+  @@id([userId, streamId])
 }
+
+model Downvote {
+  userId   String
+  streamId String
+  user     User     @relation(fields: [userId], references: [id],onDelete: Cascade)
+  stream   Stream   @relation(fields: [streamId], references: [id],onDelete: Cascade)
+
+  @@id([userId, streamId])
+}
+
 enum StreamType {
   Youtube
   Spotify
